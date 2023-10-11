@@ -68,25 +68,23 @@ def welcome():
 
 @app.route("/api/v1.0/precipitation")
 def precipitation():
-    # Create our session (link) from Python to the DB
-    # session = Session(engine)
-    print("hello1")
-    """Return a list of all passenger names"""
-    # Query all passengers
-    # results = session.query(Passenger.name).all()
+    most_recent = dt.date(2017, 8, 23)    
+    one_year = most_recent - dt.timedelta(days=365)
+    results = session.query(Measurement.date, Measurement.prcp).filter(Measurement.date >= one_year).all()
+    session.close()
 
-    # session.close()
+    precipitation = {}
+    for date, prcp in results:
+        precipitation[date] = prcp
 
-    # # Convert list of tuples into normal list
-    # all_names = list(np.ravel(results))
-
-    # return jsonify(all_names)
-    return "Precipitation"
+    return jsonify(precipitation)
 
 
 
 @app.route("/api/v1.0/stations")
 def stations():
+
+
     results = session.query(Station.station).all()
     session.close()
 
@@ -97,12 +95,24 @@ def stations():
 
 
 @app.route("/api/v1.0/tobs")
-def tobs():
-    print("hello3")
+def temperature_observations():
 
+    station_id = session.query((Measurement.station.distinct()),func.count(Measurement.station)).\
+    group_by(Measurement.station).\
+        order_by(func.count(Measurement.station).desc()).first()[0]
 
-    return "temperature observations"
+    most_recent = dt.date(2017, 8, 23)    
+    one_year = most_recent - dt.timedelta(days=365)
+    results = session.query(Measurement.date, Measurement.tobs).\
+    filter(Measurement.date >= one_year).\
+        filter(Measurement.station == station_id).all()
+    session.close()
 
+    temperature_observations = {}
+    for date, tobs in results:
+        temperature_observations[date] = tobs
+
+    return jsonify(temperature_observations)
 
 
 # @app.route("/api/v1.0/start_date/<YYYY-MM-DD>")
