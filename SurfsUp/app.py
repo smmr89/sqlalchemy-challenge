@@ -56,13 +56,13 @@ def welcome():
         f"/api/v1.0/stations<br/>"
         f"/api/v1.0/tobs<br/>"
         f"<br/>"
-        # f"By start_date: YYYY-MM-DD<br/>"
-        # f"<br/>"
-        # f"/api/v1.0/start_date/YYYY-MM-DD/<br/>"
-        # f"<br/>"
-        # f"By start_date/end_date: YYYY-MM-DD/YYYY-MM-DD<br/>"
-        # f"<br/>"
-        # f"/api/v1.0/start_date/YYYY-MM-DD/end_date/YYYY-MM-DD"
+        f"By start_date using format: /api/v1.0/YYYY-MM-DD/<br/>"
+        f"<br/>"
+        f"/api/v1.0/2016-02-12<br/>"
+        f"<br/>"
+        f"By start_date/end_date using format: /api/v1.0/YYYY-MM-DD/YYYY-MM-DD<br/>"
+        f"<br/>"
+        f"/api/v1.0/2016-03-17/2017-01-12"
     )
 
 
@@ -115,21 +115,58 @@ def temperature_observations():
     return jsonify(temperature_observations)
 
 
-# @app.route("/api/v1.0/start_date/<YYYY-MM-DD>")
-# def start_date(start_date):
+@app.route("/api/v1.0/<start_date>")
+def start_date(start_date):
 
-#     print("hello4")
+    # format = '%Y-%m-%d'
+    # date = dt.datetime.strptime(start_date, format).date()
+    
+    # station_id = session.query((Measurement.station.distinct()),func.count(Measurement.station)).\
+    #     group_by(Measurement.station).\
+    #         order_by(func.count(Measurement.station).desc()).first()[0]
 
-#     return "start date"
+
+    stats = session.query(func.min(Measurement.tobs),func.max(Measurement.tobs),func.avg(Measurement.tobs)).\
+        filter(Measurement.date >= start_date).all()\
+            # filter(Measurement.station == station_id).all()
+    session.close()
+
+    stats_dict = {
+        "start_date":start_date,
+        "TMAX":stats[0][0],
+        "TMIN":stats[0][1],
+        "TAVG":stats[0][2]
+        }
+
+    return jsonify(stats_dict)
 
 
+@app.route("/api/v1.0/<start_date>/<end_date>")
+def start_end_date(start_date,end_date):
 
-# @app.route("/api/v1.0/start_date/<YYYY-MM-DD>/end_date/<YYYY-MM-DD>")
-# def start_end_date(start_date,end_date):
+    # format = '%Y-%m-%d'
+    # date_1 = dt.datetime.strptime(start_date, format).date()
+    # date_2 = dt.datetime.strptime(end_date, format).date()
+    
+    # station_id = session.query((Measurement.station.distinct()),func.count(Measurement.station)).\
+    #     group_by(Measurement.station).\
+    #         order_by(func.count(Measurement.station).desc()).first()[0]
 
-#     print("hello5")
 
-#     return "start date and end date"
+    stats = session.query(func.min(Measurement.tobs),func.max(Measurement.tobs),func.avg(Measurement.tobs)).\
+        filter(Measurement.date >= start_date).filter(Measurement.date <= end_date).all()\
+            # filter(Measurement.station == station_id).all()
+    session.close()
+
+    stats_dict = {
+        "start_date":start_date,
+        "end_date":end_date,
+        "TMAX":stats[0][0],
+        "TMIN":stats[0][1],
+        "TAVG":stats[0][2]
+        }
+    
+    return jsonify(stats_dict)
 
 
 if __name__ == '__main__':
