@@ -133,8 +133,8 @@ def start_date(start_date):
 
     stats_dict = {
         "start_date":start_date,
-        "TMAX":stats[0][0],
-        "TMIN":stats[0][1],
+        "TMIN":stats[0][0],
+        "TMAX":stats[0][1],
         "TAVG":stats[0][2]
         }
 
@@ -161,8 +161,8 @@ def start_end_date(start_date,end_date):
     stats_dict = {
         "start_date":start_date,
         "end_date":end_date,
-        "TMAX":stats[0][0],
-        "TMIN":stats[0][1],
+        "TMIN":stats[0][0],
+        "TMAX":stats[0][1],
         "TAVG":stats[0][2]
         }
     
