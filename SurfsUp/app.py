@@ -52,9 +52,9 @@ def welcome():
     return (
         f"Available Routes:<br/>"
         f"<br/>"
-        f"/api/v1.0/precipitation<br/>"
-        f"/api/v1.0/stations<br/>"
-        f"/api/v1.0/tobs<br/>"
+        f"/api/v1.0/precipitation - last 12 months of precipitation data<br/>"
+        f"/api/v1.0/stations - a list of all stations<br/>"
+        f"/api/v1.0/tobs - a list of tempertaure observations from the most active station of the previous year<br/>"
         f"<br/>"
         f"By start_date using format: /api/v1.0/YYYY-MM-DD/<br/>"
         f"<br/>"
@@ -68,7 +68,11 @@ def welcome():
 
 @app.route("/api/v1.0/precipitation")
 def precipitation():
-    most_recent = dt.date(2017, 8, 23)    
+
+    most_recent = session.query(Measurement.date).order_by(Measurement.date.desc()).first()
+    format = '%Y-%m-%d'
+    most_recent = dt.datetime.strptime(most_recent[0], format).date()
+
     one_year = most_recent - dt.timedelta(days=365)
     results = session.query(Measurement.date, Measurement.prcp).filter(Measurement.date >= one_year).all()
     session.close()
@@ -101,7 +105,10 @@ def temperature_observations():
     group_by(Measurement.station).\
         order_by(func.count(Measurement.station).desc()).first()[0]
 
-    most_recent = dt.date(2017, 8, 23)    
+    most_recent = session.query(Measurement.date).order_by(Measurement.date.desc()).first()
+    format = '%Y-%m-%d'
+    most_recent = dt.datetime.strptime(most_recent[0], format).date()
+
     one_year = most_recent - dt.timedelta(days=365)
     results = session.query(Measurement.date, Measurement.tobs).\
     filter(Measurement.date >= one_year).\
@@ -118,17 +125,25 @@ def temperature_observations():
 @app.route("/api/v1.0/<start_date>")
 def start_date(start_date):
 
-    # format = '%Y-%m-%d'
-    # date = dt.datetime.strptime(start_date, format).date()
-    
-    # station_id = session.query((Measurement.station.distinct()),func.count(Measurement.station)).\
-    #     group_by(Measurement.station).\
-    #         order_by(func.count(Measurement.station).desc()).first()[0]
+    format = '%Y-%m-%d'
 
+    try:
+        date1 = dt.datetime.strptime(start_date, format).date()
+    except ValueError:
+        session.close()
+        error_msg = f"User date input '{start_date}' does not match format 'YYYY-MM-DD'"
+        return jsonify({"error": error_msg}), 404
+    
+    most_recent = session.query(Measurement.date).order_by(Measurement.date.desc()).first()
+    most_recent = dt.datetime.strptime(most_recent[0], format).date()
+
+    if date1 > most_recent:
+        session.close()
+        return jsonify({"error": f"The most recent date with available data is '{most_recent}'. Try with an earlier date"}), 404
 
     stats = session.query(func.min(Measurement.tobs),func.max(Measurement.tobs),func.avg(Measurement.tobs)).\
-        filter(Measurement.date >= start_date).all()\
-            # filter(Measurement.station == station_id).all()
+        filter(Measurement.date >= date1).all()
+
     session.close()
 
     stats_dict = {
@@ -144,18 +159,51 @@ def start_date(start_date):
 @app.route("/api/v1.0/<start_date>/<end_date>")
 def start_end_date(start_date,end_date):
 
-    # format = '%Y-%m-%d'
-    # date_1 = dt.datetime.strptime(start_date, format).date()
-    # date_2 = dt.datetime.strptime(end_date, format).date()
+    format = '%Y-%m-%d'
+
+    try:
+        date1 = dt.datetime.strptime(start_date, format).date()
+    except ValueError:
+        session.close()
+        error_msg = f"User date input '{start_date}' does not match format 'YYYY-MM-DD'"
+        return jsonify({"error": error_msg}), 404
     
-    # station_id = session.query((Measurement.station.distinct()),func.count(Measurement.station)).\
-    #     group_by(Measurement.station).\
-    #         order_by(func.count(Measurement.station).desc()).first()[0]
+    try:
+        date2 = dt.datetime.strptime(end_date, format).date()
+    except ValueError:
+        session.close()
+        error_msg = f"User date input '{end_date}' does not match format 'YYYY-MM-DD'"
+        return jsonify({"error": error_msg}), 404
+
+
+    most_recent = session.query(Measurement.date).order_by(Measurement.date.desc()).first()
+    most_recent = dt.datetime.strptime(most_recent[0], format).date()
+
+
+    most_earliest = session.query(Measurement.date).order_by(Measurement.date).first()
+    most_earliest = dt.datetime.strptime(most_earliest[0], format).date()
+
+    if date1 >= date2:
+        session.close()
+        return jsonify({"error": f"End Date cannot be earlier than or the same as the Start Date"}), 404
+    
+
+
+    if date2 < most_earliest:
+        session.close()
+        return jsonify({"error": f"The earliest date with available data is '{most_earliest}'. Try with an End Date equal to later than that"}), 404
+
+
+
+    if date1 > most_recent:
+        session.close()
+        return jsonify({"error": f"The most recent date with available data is '{most_recent}'. Try with a Start Date equal to earlier than that"}), 404
+
 
 
     stats = session.query(func.min(Measurement.tobs),func.max(Measurement.tobs),func.avg(Measurement.tobs)).\
-        filter(Measurement.date >= start_date).filter(Measurement.date <= end_date).all()\
-            # filter(Measurement.station == station_id).all()
+        filter(Measurement.date >= start_date).filter(Measurement.date <= end_date).all()
+
     session.close()
 
     stats_dict = {
