@@ -21,4 +21,5 @@ This folder contains solutions to the SQLAclhemy challenge Part 1 and Part 2
 
 ## References
 
-Quick DBD was used for generating the ERD and exporting initial schema to create tables: https://www.quickdatabasediagrams.com/
+SQLAlchemy: https://www.sqlalchemy.org/
+Flask: https://flask.palletsprojects.com/en/3.0.x/
