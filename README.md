@@ -21,5 +21,5 @@ This folder contains solutions to the SQLAclhemy challenge Part 1 and Part 2
 
 ## References
 
-SQLAlchemy: https://www.sqlalchemy.org/
-Flask: https://flask.palletsprojects.com/en/3.0.x/
+* SQLAlchemy: https://www.sqlalchemy.org/
+* Flask: https://flask.palletsprojects.com/en/3.0.x/
